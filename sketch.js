@@ -4,7 +4,7 @@ let nav_color = (255, 218, 179);
 let side_color = (191, 191, 191);
 let nav_height = 150;
 let side_width = 250;
-let sizeSlider;
+let sizeSlider, speedSlider;
 let margin_side;
 let margin_vertical;
 let w_space;
@@ -42,9 +42,12 @@ function setup() {
     //slider
     sizeSlider = createSlider(10, 500, 10);
     sizeSlider.position((windowWidth/5),(nav_height/2));
+    speedSlider = createSlider(1, 150, 50);
+    speedSlider.position(((windowWidth/5)*2),(nav_height/2));
     fill(0, 0, 0);
     textSize(32);
-    text('Data amount', (sizeSlider.x), (nav_height/2)-10);
+    text('Size', (sizeSlider.x), (nav_height/2)-10);
+    text('Speed', (speedSlider.x), (nav_height/2)-10);
 
     //algorithm selection
     bubbleSort_button = createButton('Bubblesort');
@@ -71,12 +74,19 @@ function setup() {
         rect((side_width  + margin_side + (w_space * i)), (windowHeight - margin_vertical -arr[i]), w_space, arr[i]);
     }
 
-    sizeSlider.input(updateSlider);
+    sizeSlider.input(updateSizeSlider);
+    speedSlider.input(updateSpeedSlider);
     bubbleSort_button.mousePressed(function() {if(!is_sorting){chooseSort(1);}});
     quickSort_button.mousePressed(function() {if(!is_sorting){chooseSort(2);}});
 }
 
-function updateSlider(){
+function updateSpeedSlider(){
+    if( !is_sorting ){
+        sorting_speed = speedSlider.value();
+    }
+}
+
+function updateSizeSlider(){
     if( !is_sorting ){
         amount = sizeSlider.value();
         w_space = ((windowWidth - (2 * margin_side) - side_width) / amount);
@@ -133,7 +143,8 @@ function display_bars(){
     rect(0,0,windowWidth,nav_height);
     fill(0,0,0);
     textSize(32);
-    text('Data amount', (sizeSlider.x), (nav_height/2)-20); 
+    text('Size', (sizeSlider.x), (nav_height/2)-20); 
+    text('Speed', (speedSlider.x), (nav_height/2)-20); 
     //sidebar
     fill(side_color);
     noStroke();
@@ -215,7 +226,6 @@ function draw(){
             }
             break;
         case 1:
-            console.log(states);
             for (let i = 0; i < arr.length; i++) {
                 noStroke();
                 if(states[i] == 1){
