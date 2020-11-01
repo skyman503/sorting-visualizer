@@ -10,11 +10,14 @@ let margin_vertical;
 let w_space;
 let max_size;
 let amount;
-let bubble_sort_button;
+let bubbleSort_button;
 let sort_type;
 let is_sorting;
 let index_i, index_j;
+let sorting_speed;
+let promise_counter;
 let arr = [];
+let states = [];
 
 function setup() {
     createCanvas(windowWidth,windowHeight);
@@ -23,8 +26,10 @@ function setup() {
     is_sorting = false;
     index_i=0;
     index_j=0;
+    sort_type = 0;
+    promise_counter = 0;
+    sorting_speed = 50;
     background(bg_color);
-  
     //navbar
     fill(nav_color);
     noStroke();
@@ -35,15 +40,17 @@ function setup() {
     rect(0,nav_height,side_width, (windowHeight-nav_height));
   
     //slider
-    sizeSlider = createSlider(5, 500, 5);
+    sizeSlider = createSlider(10, 500, 10);
     sizeSlider.position((windowWidth/5),(nav_height/2));
     fill(0, 0, 0);
     textSize(32);
     text('Data amount', (sizeSlider.x), (nav_height/2)-10);
 
     //algorithm selection
-    bubble_sort_button = createButton('Bubble sort');
-    bubble_sort_button.position((side_width/3), (nav_height+50));
+    bubbleSort_button = createButton('Bubblesort');
+    bubbleSort_button.position((side_width/3), (nav_height+50));
+    quickSort_button = createButton("Quicksort");
+    quickSort_button.position((side_width/3), (nav_height+100));
 
     //content
     amount = 10;
@@ -52,6 +59,7 @@ function setup() {
     for (let i=0; i < amount; i++){
         r = random(max_size);
         append(arr, r);
+        append(states, -1);
     }
     //displaying content
     margin_side = 50;
@@ -64,7 +72,8 @@ function setup() {
     }
 
     sizeSlider.input(updateSlider);
-    bubble_sort_button.mousePressed(bubbleSort);
+    bubbleSort_button.mousePressed(function() {if(!is_sorting){chooseSort(1);}});
+    quickSort_button.mousePressed(function() {if(!is_sorting){chooseSort(2);}});
 }
 
 function updateSlider(){
@@ -75,14 +84,45 @@ function updateSlider(){
         for(let i=0; i < amount; i++){
             let r = random(max_size);
             append(arr,r);
+            append(states, -1);
         }
         //console.log(arr);
     }
 }
 
-function bubbleSort(){
-    sort_type = 1;
-    is_sorting = true;
+function chooseSort(i){
+    sort_type = i;
+    switch(sort_type){
+        case 1:
+            is_sorting = true;
+            reset_states();
+            buubleSort();
+            break;
+        case 2:
+            is_sorting = true;
+            reset_states();
+            quickSort(0, arr.length-1);
+            break;
+    }
+    
+    
+}
+
+function reset_states(){
+    for(let i=0; i<amount;i++){
+        states[i] = -1;
+    }
+}
+
+async function swap(a, b) {
+    await sleep(sorting_speed);
+    let temp = arr[a];
+    arr[a] = arr[b];
+    arr[b] = temp;
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function display_bars(){
@@ -100,125 +140,103 @@ function display_bars(){
     rect(0,nav_height,side_width, (windowHeight-nav_height));
 
 }
+async function buubleSort(){
+    let swapped;
+    for(let i=0; i < (arr.length-1); i++){
+        swapped = false;
+        for(let j=0; j < (arr.length-i-1); j++){
+            reset_states();
+            states[j] = 1;
+            states[j+1] = 1;
+            if(arr[j] > arr[j + 1]){
+                await swap(j, (j+1));
+                swapped = true;
+            }
+        }
+        if (swapped = false){
+            break;
+        }
+    }
+    is_sorting=false;
+    sort_type = 0;
+}
 
+async function quickSort(start, end) {
+    if (start >= end) {
+        return;
+    }
+    let index = await partition(start, end);
+    states[index] = -1;
+  
+    await Promise.all([
+      quickSort(start, index - 1),
+      quickSort(index + 1, end),
+      promise_counter = promise_counter + 1
+    ]);
+    promise_counter = promise_counter - 1;
+    if(promise_counter == 0){
+        is_sorting = false;
+        sort_type = 0;
+    }
+}
+  
+async function partition(start, end) {
+    for (let i = start; i <= end; i++) {
+      states[i] = 1;
+    }
+    let pivotValue = arr[end];
+    let pivotIndex = start;
+    states[pivotIndex] = 0;
+    for (let i = start; i < end; i++) {
+      if (arr[i] < pivotValue) {
+        await swap(i, pivotIndex);
+        states[pivotIndex] = -1;
+        pivotIndex++;
+        states[pivotIndex] = 0;
+      }
+    }
+    await swap(pivotIndex, end);
+    for (let i = start; i <= end; i++) {
+      if (i != pivotIndex) {
+        states[i] = -1;
+      }
+    }
+    return pivotIndex;
+}
 
 function draw(){
     display_bars();
-    frameRate(150);
-    //display static
-    if( !is_sorting ){
-        fill(0,0,0);
-        noStroke();
-        for(let i=0; i < amount; i++){
-            rect((side_width  + margin_side + (w_space * i)), (windowHeight - margin_vertical - arr[i]), w_space, arr[i]);
-        }
-    }
-    else{
-        switch(sort_type){
-            //bubble sort
-            case 1:
-                let tmp;
-                if( arr[index_j] > arr[index_j+1] ){
-                    tmp = arr[index_j];
-                    arr[index_j] = arr[index_j+1];
-                    arr[index_j+1] = tmp;
-
-                }
-                console.log(index_i, index_j)      
-                if( index_i < amount){
-                    index_j = index_j + 1;
-                    if( index_j >= (amount-index_i-1)){
-                        index_j = 0;
-                        index_i = index_i + 1;  
-                    }
-                }  else{
-                    console.log(arr);
-                    index_i = 0;
-                    index_j = 0;
-                    is_sorting = false;
-                }
-                fill(0,0,0);
+    switch(sort_type){
+        case 0:
+            for (let i = 0; i < arr.length; i++) {
                 noStroke();
-                for(let i=0; i < amount; i++){
-                    if(( i == index_i ) || (i == index_j)){
-                        fill(202, 3, 252);
-                    }
-                    else{
-                        fill(0,0,0);
-                    }
-                    rect((side_width  + margin_side + (w_space * i)), (windowHeight - margin_vertical - arr[i]), w_space, arr[i]);
+                fill(0,0,0);
+                rect((side_width  + margin_side + (w_space * i)), (windowHeight - margin_vertical - arr[i]), w_space, arr[i]);
+            }
+            break;
+        case 1:
+            console.log(states);
+            for (let i = 0; i < arr.length; i++) {
+                noStroke();
+                if(states[i] == 1){
+                    fill(202, 3, 252);
+                }else{
+                fill(0,0,0);}
+                rect((side_width  + margin_side + (w_space * i)), (windowHeight - margin_vertical - arr[i]), w_space, arr[i]);
+            }
+            break;
+        case 2:     
+            for (let i = 0; i < arr.length; i++) {
+                    noStroke();
+                if (states[i] == 0) {
+                    fill(202, 3, 252);
+                } else if (states[i] == 1) {
+                    fill(102, 204, 255);
+                } else {
+                    fill(0,0,0);
                 }
-
-
-
-                break;
-        }
+                rect((side_width  + margin_side + (w_space * i)), (windowHeight - margin_vertical - arr[i]), w_space, arr[i]);
+            }
+            break;
     }
-
-
 }
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-
-let yPos = 0;
-let arr=[];
-let ile=5;
-let margin = 200;
-
-
-function setup() {
-  // setup() runs once
-
-  createCanvas(windowWidth, windowHeight);
-  frameRate(30);
-
-
-  for(let i=0; i< 5 ; i++){
-	let r = random(windowHeight-50);
-	append(arr,r);
-}
-
-  for(let i=0; i< 5 ; i++){
-	rect(0+(((windowWidth)/5)*i),windowHeight-arr[i],windowWidth/5,arr[i]);
-  }
-
-
-  slider = createSlider(10, 1000,20);
-
-  slider.input(updateSlider);
-}
-function updateSlider(){
-	ile = slider.value();
-	arr.splice(0, arr.length);
-	for(let i=0; i<ile; i++){
-		let r = random(windowHeight-150);
-		append(arr,r);
-	}
-	console.log(arr)
-}
-
-function draw() {
-	
-
-
-  background(204);
- 
-  let c = (255, 204, 0);
-  fill(c);
-  noStroke();
-
-  for(let i=0; i<ile; i++){
-	rect(0+(((windowWidth)/ile)*i),windowHeight-arr[i],windowWidth/ile,arr[i]);
-  }
-}*/
